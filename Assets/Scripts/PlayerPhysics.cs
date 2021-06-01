@@ -23,6 +23,9 @@ public class PlayerPhysics : MonoBehaviour {
     [HideInInspector]
     public bool movementStopped;
 
+     [HideInInspector]
+    public bool canWallHold;
+
     Ray ray;
     RaycastHit hit;
 
@@ -34,7 +37,7 @@ public class PlayerPhysics : MonoBehaviour {
         SetCollider(originalSize,originalCentre);
     }
 
-    public void Move(Vector2 moveAmount){
+    public void Move(Vector2 moveAmount,float moveDirX){
         float deltaY = moveAmount.y;
         float deltaX = moveAmount.x;
         Vector2 p = transform.position;
@@ -48,6 +51,7 @@ public class PlayerPhysics : MonoBehaviour {
 
             ray = new Ray(new Vector2(x,y), new Vector2(0,dir));
             Debug.DrawRay(ray.origin,ray.direction);
+
             if(Physics.Raycast(ray,out hit, Mathf.Abs(deltaY) + skin,collisionMask)){
                 float dst = Vector3.Distance (ray.origin,hit.point);
 
@@ -63,6 +67,9 @@ public class PlayerPhysics : MonoBehaviour {
 
 //Colisoes direita e esquerda
     movementStopped = false;
+    canWallHold = false;
+
+    if(deltaX != 0){
         for(int i = 0; i<collisionDivisionY; i++){
             float dir = Mathf.Sign(deltaX);
             float x =p.x + c.x + s.x/2 * dir; //ponto esquerdo, direito e centro da base do collider
@@ -70,7 +77,14 @@ public class PlayerPhysics : MonoBehaviour {
 
             ray = new Ray(new Vector2(x,y), new Vector2(dir,0));
             Debug.DrawRay(ray.origin,ray.direction);
+
             if(Physics.Raycast(ray,out hit, Mathf.Abs(deltaX) + skin,collisionMask)){
+                if(hit.collider.tag == "Wall Jump"){
+                    if(Mathf.Sign(deltaX) == Mathf.Sign(moveDirX) && moveDirX != 0){
+                    canWallHold = true;
+                    }
+                }
+
                 float dst = Vector3.Distance (ray.origin,hit.point);
 
                 if(dst > skin){ //Para a queda do jogador se tocar no colider
@@ -82,6 +96,7 @@ public class PlayerPhysics : MonoBehaviour {
                 break;
             }
         }
+    }
 
         if(!grounded && !movementStopped){
         Vector3 playerDir = new Vector3(deltaX,deltaY);
